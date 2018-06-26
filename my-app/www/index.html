@@ -1,0 +1,153 @@
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=deviec-width, inital-scale=1.0">
+    <link rel="stylesheet" herf="css/jquery.mobile-1.4.5.min.css">
+    <script src="js/jquery-1.11.1.min.js"></script>
+    <script src="js/jquery.mobile-1.4.5.min.js"></script>
+</head>
+
+<body>
+
+<div data-role="page" id="userpage">
+    <div data-role="header" data-position="fixed">
+        <div data-role="navber">
+            <ul>
+                <li><a href="#userpage" class="ui-btn-active ui-state-persist">마이페이지</a></li>
+                <li><a href="#friendpage" class="ui-btn-active ui-state-persist">친구 목록</a></li>
+                <li><a href="#grouppage" class="ui-btn-active ui-state-persist">그룹 목록</a></li>
+            </ul>
+        </div>
+    </div>
+    <div data-role="content">
+        <p>내용</p>
+    </div>
+</div>
+
+<div data-role="page" id="friendpage">
+    <div data-role="header" data-position="fixed">
+        <div data-role="navber">
+            <ul>
+                <li><a href="#userpage" class="ui-btn-active ui-state-persist">마이페이지</a></li>
+                <li><a href="#friendpage" class="ui-btn-active ui-state-persist">친구 목록</a></li>
+                <li><a href="#grouppage" class="ui-btn-active ui-state-persist">그룹 목록</a></li>
+            </ul>
+        </div>
+    </div>
+    <div data-role="content">
+        <p>내용</p>
+    </div>
+</div>
+
+<div data-role="page" id="grouppage">
+    <div data-role="header" data-position="fixed">
+        <div data-role="navber">
+            <ul>
+                <li><a href="#userpage" class="ui-btn-active ui-state-persist">마이페이지</a></li>
+                <li><a href="#friendpage" class="ui-btn-active ui-state-persist">친구 목록</a></li>
+                <li><a href="#grouppage" class="ui-btn-active ui-state-persist">그룹 목록</a></li>
+            </ul>
+        </div>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview">
+
+
+            <!--그룹 목록에서 가져오기-->
+            <li>
+                <a herf="#">
+                    그룹 1
+                </a>
+            </li>
+            <li>
+                <a herf="#">
+                    그룹 2
+                </a>
+            </li>
+
+
+        </ul>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <il><a herf="#addgroup" data-icon="plus">그룹 추가</a></il>
+                <il><a herf="#delgroup" data-icon="minus">그룹 삭제</a></il>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div data-role="page" id="addgroup">
+    <div data-role="header" data-position="fixed">
+        <h1>그룹 추가</h1>
+    </div>
+    <div data-role="content">
+        <div data-role="fieldcontain">
+            <label for="groupname">그룹이름</label>
+            <input type="text" name="gname" id="groupname" data-role="none">
+        </div>
+        <div data-role="fieldcontain">
+            <label for="friend_select">친구 선택</label>
+            <select name="selected_friend" id="friend_select" data-native-menu="false" multiple="multiple">
+                <option value=" " data-placeholder="true">친구 선택</option>
+                <!--친구목록에서 가져오기-->
+
+                <option value="f1">친구1</option>
+                <option value="f2">친구2</option>
+                <option value="f3">친구3</option>
+
+
+
+            </select>
+        </div>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <il><a herf="#" data-icon="check">확인</a></il>
+                <il><a herf="#grouppage" data-icon="delete">취소</a></il>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div data-role="page" id="delgroup">
+    <div data-role="content">
+        <div data-role="fieldcontain">
+            <label for="grouplist">그룹목록</label>
+            <input type="text" name="glist" id="grouplist" data-role="none">
+        </div>
+        <div data-role="fieldcontain">
+            <fieldset data-role="controlgroup">
+                <legend>그룹 목록</legend>
+                <!-- 그룹 목록 가져오기 -->
+
+
+                <input type="checkbox" name="group_del1" id="group_del1" value="1"/>
+                <label for="group_del1">그룹1</label>
+                <input type="checkbox" name="group_del2" id="group_del2" value="2"/>
+                <label for="group_del2">그룹2</label>
+                <input type="checkbox" name="group_del3" id="group_del3" value="3"/>
+                <label for="group_del3">그룹3</label>
+
+
+
+            </fieldset>
+        </div>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <il><a herf="#" data-icon="check">확인</a></il>
+                <il><a herf="#grouppage" data-icon="delete">취소</a></il>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+</body>
+
+</html>

@@ -1,0 +1,82 @@
+
+<html>
+
+<head>
+
+    <title>Join!</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/jquery.mobile-1.4.5.css"/>
+    <script src="js/jquery-1.11.1.js"></script>
+    <script src="js/jquery.mobile-1.4.5.js"></script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            $("#submit").click(function() {
+                 alert("click");
+                 var id = $("#id").val();
+                 var pw = $("#pw").val();
+                 var name = $("#name").val();
+                 var dataString = "name="+name+"&id="+id+"&pw="+pw;
+
+                 $.ajax({
+                     type: "POST",
+                     url:"http://172.21.26.141/term/login.php",
+                     data: dataString,
+                     crossDomain: true,
+                     cache: false,
+                     //beforeSend: function(){ $("#submit").val('Connecting...');},
+                     success: function(data){
+                         if(data=="success")
+                         {
+                             alert("추가 완료");
+                             $("#submit").val('submit');
+                         }
+                         else if(data=="error")
+                         {
+                            alert("error");
+                         }
+                     }
+                 });
+
+             });
+          });
+
+</script>
+</head>
+
+<body>
+<center>
+    <form action= method=post name=frmjoin>
+        <table cellpadding=2 cellspacing=2>
+            <tr>
+                <td colspan=2 align=center><b> 회 &nbsp;원&nbsp; 가 &nbsp;입</td></b>
+            </tr>
+            <tr>
+                <td align=center>ID</td>
+                <td><input type=text name=joinid maxlength=15 id="id">&nbsp;&nbsp;
+                    <input type=button value="중복검사" onclick=chid()></td>
+                <input type=hidden id="chk_id2" name=chk_id2 value="0">
+            </tr>
+            <tr>
+                <td align=center>비밀번호</td>
+                <td><input type=password name=joinpw maxlength=20 id="pw"></td>
+            </tr>
+            <tr>
+                <td align=center>비밀번호 확인</td>
+                <td><input type=password name=joinpw2 maxlength=20></td>
+            </tr>
+            <tr>
+                <td align=center>이름</td>
+                <td><input type=password name=name id="name" maxlength=20></td>
+            </tr>
+
+            <tr> <td colspan=2 align=center><input type="button" id="submit">가입하기</a> &nbsp;&nbsp;
+                <input type=reset value="다시작성">&nbsp;&nbsp;
+                <input type=button value="취소" onclick="history.back();">
+            </td>
+            </tr>
+        </table>
+    </form>
+    <iframe src="" id="ifrm1" scrolling=no frameborder=no width=0 height=0 name="ifrm1"></iframe>
+</body>
+</html>

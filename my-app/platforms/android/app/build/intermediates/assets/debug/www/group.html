@@ -1,0 +1,1038 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="stylesheet" href="calendar/fullcalendar.min.css"/>
+
+    <link rel="stylesheet" href="css/jquery.mobile-1.4.5.css"/>
+
+
+    <link href='calendar/fullcalendar.print.css' rel='stylesheet' media='print' />
+
+    <script src="js/jquery-1.11.1.js"></script>
+    <script src="js/jquery.mobile-1.4.5.js"></script>
+
+    <script src="calendar/lib/moment.min.js"></script>
+    <script src="calendar/fullcalendar.js"></script>
+    <script type="text/javascript">
+        // 로그인시 초기화
+        var myid="";
+        // 서버 IP
+        var ip = "192.168.10.102";
+
+        $(document).ready(function() {
+
+/*################################### 회원가입 ###################################1*/
+            $('#id_check').click(function() {
+                $.ajax({
+                    type: "POST",
+                    url: "http://"+ip+"/term/check_valid_id.php",
+                    data : {
+                        userid : $('#sign_in_id').val()
+                    },
+                    success: function(data){
+                         if(data=="success")
+                         {
+                             alert("사용 가능한 아이디 입니다");
+                             $("#submit").val('submit');
+                         }
+                         else if(data=="error")
+                         {
+                            alert("사용 불가능한 아이디 입네다!!");
+                         }
+                    }
+                });
+            });
+
+            $("#submit").click(function() {
+                 var id = $("#sign_in_id").val();
+                 var pw = $("#sign_in_pw").val();
+                 var name = $("#sign_in_name").val();
+                 var dataString = "name="+name+"&id="+id+"&pw="+pw;
+
+                 $.ajax({
+                     type: "POST",
+                     url:"http://"+ip+"/term/add_user.php",
+                     data: dataString,
+                     crossDomain: true,
+                     cache: false,
+                     success: function(data){
+                         if(data=="success")
+                         {
+                             alert("추가 완료");
+                             $("#submit").val('submit');
+                             $.mobile.changePage("#login_page", { transition: "slideup", changeHash: false });
+                         }
+                         else if(data=="error")
+                         {
+                            alert("아이디, 비번을 다시 확인해주세요");
+                         }
+                     }
+                 });
+             });
+
+ /*########################### 로그인 ###############################*/
+            $("#Login").click(function() {
+                var userid = $('#userid').val();
+                var userpw = $('#userpw').val();
+
+                var getf_url="http://"+ip+"/term/get_user_info.php?id=";
+                getf_url+=userid + "&pw=" + userpw;
+
+                $.getJSON(getf_url,function(result) {
+                    if(result=="error")
+                        alert('아이디, 비밀번호를 다시 확인해주세요');
+                    else {
+                        alert('로그인 성공');
+                        myid = userid;
+                        $.mobile.changePage("#userpage", { transition: "slideup", changeHash: false });
+                    }
+                });
+            });
+
+/*############################## 마이 페이지 #########################*/
+            $(document).on("pageshow", "#userpage" ,function( event ) {
+                call_my_calendar();
+            });
+
+            $("#logout").click(function() {
+                 var decision = confirm("로그아웃 하시겠습니까?");
+                 if(decision) {
+                    alert("로그아웃");
+                    $.mobile.changePage("#login_page", { transition: "slideup", changeHash: false });
+                 }
+            });
+
+             $("#drop_out").click(function() {
+                 var decision = confirm("탈퇴하시겠습니까?");
+                 if(decision) {
+                     var dataString = "id="+myid;
+
+                     $.ajax({
+                         type: "POST",
+                         url:"http://"+ip+"/term/drop_user.php",
+                         data: dataString,
+                         crossDomain: true,
+                         cache: false,
+                         success: function(data){
+                             if(data=="success")
+                             {
+                                 alert("잘가요");
+                             }
+                         }
+                     });
+                 $.mobile.changePage("#login_page", { transition: "slideup", changeHash: false });
+                 }
+                 else
+                    $.mobile.changePage("#userpage", { transition: "slideup", changeHash: false });
+             });
+/*############################## 친구관리 #########################*/
+            $(document).on("pageshow", "#friendpage" ,function( event ) {
+                var getf_url="http://"+ip+"/term/friend_json.php?id=";
+                getf_url+=myid;
+                $.getJSON(getf_url,function(result) {
+                    var lst="";
+                    $.each(result, function(i,row) {
+                        lst += '<li>'+row.id2+"</li>";
+
+                });
+                    $("#friend_list").empty();
+                    $("#friend_list").append(lst);
+                    $("#friend_list").listview("refresh");
+                });
+                var getf_url2="http://"+ip+"/term/friend_request.php?id=";
+                getf_url2 += myid;
+                $.getJSON(getf_url2,function(result) {
+                    $.each(result, function(i,row) {
+                         var lst = "친구 등록 요청 : " + row.id1;
+                         lst += '\n' + "친구 추가 하시겠습니까?";
+                         var decision = confirm(lst);
+                         if(decision) {
+                            var fid = row.id1;
+                            var dataString = "id="+myid+"&fid="+fid;
+                            $.ajax({
+                                 type: "POST",
+                                 url:"http://"+ip+"/term/friend_add.php",
+                                 data: dataString,
+                                 crossDomain: true,
+                                 cache: false,
+                                 success: function(data){
+                                     if(data=="success")
+                                     {
+                                         alert("추가 완료");
+                                     }
+                                     else if(data=="error")
+                                     {
+                                        alert("Error");
+                                     }
+                                 }
+                            });
+                            $.mobile.changePage("#userpage", { transition: "slideup", changeHash: false });
+                         }
+                         else {
+                            var fid = row.id1;
+                            var dataString = "id="+myid+"&fid="+fid;
+                            $.ajax({
+                                 type: "POST",
+                                 url:"http://"+ip+"/term/friend_del.php",
+                                 data: dataString,
+                                 crossDomain: true,
+                                 cache: false,
+                                 success: function(data){
+                                     if(data=="success")
+                                     {
+
+                                     }
+                                     else if(data=="error")
+                                     {
+
+                                     }
+                                 }
+                            });
+                         }
+                    });
+                });
+            });
+
+/*######################### 친구 삭제 ######################*/
+            $(document).on("pageshow", "#delfriend" ,function( event ) {
+                var getf_url="http://"+ip+"/term/friend_json.php?id=";
+                getf_url+=myid;
+                $.getJSON(getf_url,function(result) {
+                    var lst="";
+                    $.each(result, function(i,roㅁw) {
+                        lst += '<li><h><input type="checkbox" id="'+row.id2+'" name="box">'+row.id2+'</h>';
+                        lst += '</li>';
+                    });
+                    $("#del_friend_list").empty();
+                    $("#del_friend_list").append(lst);
+                    $("#del_friend_list").listview("refresh");
+                });
+            });
+
+            $("#friend_del_confirm").click(function() {
+                var flag;
+                $("input[name=box]:checked").each(function() {
+                     var fid = this.id;
+                     var dataString = "id="+myid+"&fid="+fid;
+
+                     $.ajax({
+                         type: "POST",
+                         url:"http://"+ip+"/term/friend_del.php",
+                         data: dataString,
+                         crossDomain: true,
+                         cache: false,
+                         beforeSend: function(){ $("#friend_add_confirm").val('Connecting...');},
+                         success: function(data){
+                             if(data=="success")
+                             {
+                                 alert("삭제 완료");
+                                 $("#friend_add_confirm").val('submit');
+                             }
+                             else if(data=="error")
+                             {
+                                flag = false;
+                                alert("error");
+                             }
+                         }
+                     });
+                });
+                $.mobile.changePage("#friendpage", { transition: "slideup", changeHash: false });
+            });
+
+/*######################### 친구 추가 ######################*/
+            $("#search_friend").click(function() {
+                var fid = $("#friend_id").val();
+
+                var getf_url="http://"+ip+"/term/search_user.php?id=";
+                getf_url+=fid;
+                $.getJSON(getf_url,function(result) {
+                    if(result=='error') {
+                        alert('아이디가 존재하지 않습니다.');
+                    }
+                    else {
+                        var lst="";
+                        $.each(result, function(i,row) {
+                            lst += '<li>아이디 : '+row.id +', 이름 : '+ row.name +'</li>';
+                        });
+                        $("#searched_list").empty();
+                        $("#searched_list").append(lst);
+                        $("#searched_list").listview("refresh");
+                    }
+                });
+             });
+
+            $("#friend_add_confirm").click(function() {
+                 var fid = $("#friend_id").val();
+                 var dataString = "id="+myid+"&fid="+fid;
+                 $.ajax({
+                     type: "POST",
+                     url:"http://"+ip+"/term/friend_add.php",
+                     data: dataString,
+                     crossDomain: true,
+                     cache: false,
+                     beforeSend: function(){ $("#friend_add_confirm").val('Connecting...');},
+                     success: function(data){
+                         if(data=="success") {
+                             alert("추가 완료");
+                             $("#friend_add_confirm").val('submit');
+                         }
+                         else if(data=="error") {
+                            alert("Error");
+                         }
+                     }
+                 });
+             });
+/*############################# 그룹 #############################*/
+            //그룹메인 페이지
+             $(document).on("pageshow", "#grouppage" ,function( event ) {
+
+                var getf_url="http://"+ip+"/term/group_json.php?id=";
+                getf_url+=myid;
+                $.getJSON(getf_url,function(result) {
+                    var lst="";
+                    var prev_id ="";
+                    $.each(result, function(i,row) {
+                        if(prev_id != row.group_id) {
+                            if(i!=0)
+                                lst += "</p></a></li>";
+                            lst += '<li><a href="javascript:void(0);" onClick="javascript:call_group_calendar('+row.group_id+');"><h2>';
+                            lst +=  row.group_name+"</h2><p>"+row.member;
+                            prev_id = row.group_id;
+                        }
+                        else {
+                            lst += ", " + row.member;
+                        }
+                    });
+                    $("#group_list").empty();
+                    $("#group_list").append(lst);
+                    $("#group_list").listview("refresh");
+                });
+            });
+
+/*######################### 그룹 추가 ######################*/
+            $(document).on("pageshow", "#addgroup" ,function( event ) {
+
+                var getf_url="http://"+ip+"/term/friend_json.php?id=";
+                getf_url+=myid;
+                $.getJSON(getf_url,function(result) {
+                    var lst="";
+                    $.each(result, function(i,row) {
+                        lst += "<option value="+row.id2+">"+row.id2+"</option>";
+                    });
+                    $("#friend_select").empty();
+                    $("#friend_select").append(lst);
+                });
+            });
+
+            $("#group_add_confirm").click(function() {
+
+                 var gid = $("#groupname").val();
+                 var selected = $("#friend_select").val();
+                 var dataString = "id="+myid+"&gname=" + gid + "&len=" + selected.length;
+                 for(var i=0;i<selected.length;++i)
+                    dataString += "&" + i + "=" + selected[i];
+
+                 $.ajax({
+                     type: "POST",
+                     url:"http://"+ip+"/term/group_add.php",
+                     data: dataString,
+                     crossDomain: true,
+                     cache: false,
+                     beforeSend: function(){ $("#group_add_confirm").val('Connecting...');},
+                     success: function(data){
+                         if(data=="success") {
+                             alert("추가 완료");
+                             $("#group_add_confirm").val('submit');
+                         }
+                         else if(data=="error") {
+                            alert("error");
+                         }
+                     }
+                 });
+
+             });
+
+/*######################### 그룹 삭제 ######################*/
+            $(document).on("pageshow", "#delgroup" ,function( event ) {
+
+                var getf_url="http://"+ip+"/term/del_group_json.php?id=";
+                getf_url+=myid;
+                $.getJSON(getf_url,function(result) {
+                    var lst="";
+                    $.each(result, function(i,row) {
+                        lst += '<li><h><input type="checkbox" id="'+row.group_id+'" name="box">'+row.group_name+'</h>';
+                        lst += '</li>';
+                    });
+                    $("#del_group_list").empty();
+                    $("#del_group_list").append(lst);
+                    $("#del_group_list").listview("refresh");
+                });
+            });
+
+            $("#group_del_confirm").click(function() {
+                $("input[name=box]:checked").each(function() {
+                     var gid = this.id;
+                     var dataString = "id="+myid+"&gid="+gid;
+                     $.ajax({
+                         type: "POST",
+                         url:"http://"+ip+"/term/group_del.php",
+                         data: dataString,
+                         crossDomain: true,
+                         cache: false,
+                         beforeSend: function(){ $("#group_add_confirm").val('Connecting...');},
+                         success: function(data){
+                             if(data=="success")
+                             {
+                                 $("#group_add_confirm").val('submit');
+                                 $('#my_calendar').fullCalendar('refetchEvents');
+                             }
+                             else if(data=="error")
+                             {
+                                flag = false;
+                                alert("error");
+                             }
+                         }
+                     });
+                });
+                $.mobile.changePage("#grouppage", { transition: "slideup", changeHash: false });
+            });
+
+/*##################################  일정 #############################*/
+            $("#event_add_confirm").click(function() {
+                var title = $("#title").val();
+                var start_time = $("#start_time").val();
+                var end_time = $("#end_time").val();
+                var start_min = $("#start_min").val();
+                var end_min = $("#end_min").val();
+                start_time += ":" + start_min + ":00";
+                end_time += ":" + end_min + ":00";
+                var s = global_start.format() + " " + start_time;
+                global_end = moment(global_end).subtract(1,'days');
+                var e = global_end.format() + " " + end_time;
+                if (title) {
+                    var dataString = "gid="+cal_gid+"&title="+title+"&start="+s+"&end="+e;
+                    $.ajax({
+                        type: "POST",
+                        url:"http://"+ip+"/term/add_group_event.php",
+                        data: dataString,
+                        crossDomain: true,
+                        cache: false,
+                        success: function(data) {
+                            if(data=="success") {
+                                alert("추가 완료");
+                                $('#calendar').fullCalendar('refetchEvents');
+                                $('#my_calendar').fullCalendar('refetchEvents');
+                                $('#calendar').fullCalendar('refetchEventSources', event_url);
+                            }
+                            else
+                                alert("fail");
+                            }
+                    });
+                }
+                $.mobile.changePage("#clnder", { transition: "slideup", changeHash: false });
+            });
+
+            $("#myevent_add_confirm").click(function() {
+                var title = $("#my_title").val();
+                var start_time = $("#my_start_time").val();
+                var end_time = $("#my_end_time").val();
+                var start_min = $("#my_start_min").val();
+                var end_min = $("#my_end_min").val();
+                start_time += ":" + start_min + ":00";
+                end_time += ":" + end_min + ":00";
+                var s = my_global_start.format() + " " + start_time;
+                my_global_end = moment(my_global_end).subtract(1,'days');
+                var e = my_global_end.format() + " " + end_time;
+
+                if (title) {
+                    var dataString = "id="+myid+"&title="+title+"&start="+s+"&end="+e;
+                    $.ajax({
+                        type: "POST",
+                        url:"http://"+ip+"/term/add_my_event.php",
+                        data: dataString,
+                        crossDomain: true,
+                        cache: false,
+                        success: function(data) {
+                            if(data=="success") {
+                                alert("추가 완료");
+                                $('#my_calendar').fullCalendar('refetchEvents');
+                                $('#calendar').fullCalendar('refetchEvents');
+                            }
+                            else
+                                alert("fail");
+                            }
+                    });
+                }
+                $.mobile.changePage("#userpage", { transition: "slideup", changeHash: false });
+            });
+    });
+
+    function chid() {
+            document.getElementById("chk_id2").value=0;
+            var id=document.getElementById("sign_in_id").value;
+
+            if(id=="") {
+                alert("빈칸 안돼요!");
+                exit;
+            }
+
+        }
+
+    function isSame() {
+            if(document.getElementById('sign_in_pw').value!='' && document.getElementById('pwCheck').value!='') {
+            if(document.getElementById('sign_in_pw').value==document.getElementById('pwCheck').value) {
+            document.getElementById('same').innerHTML='비밀번호가 일치합니다.';
+            document.getElementById('same').style.color='blue';
+            }
+            else {
+            document.getElementById('same').innerHTML='비밀번호가 일치하지 않습니다.';
+            document.getElementById('same').style.color='red';
+            }
+          }
+    }
+
+/* #################### 개인달력 ######################### */
+    var btn_flag = false;
+    var my_global_start, my_global_end;
+
+    function call_my_calendar() {
+        var my_event_url = "http://"+ip+"/term/get_my_event.php?id="+myid;
+
+        $('#my_calendar').fullCalendar({
+            editable: true,
+            header: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'month,agendaWeek,agendaDay'
+            },
+            allDay: false,
+            eventSources: [
+                            my_event_url
+                          ],
+            eventRender: function(event, element, view) {
+                if (event.allDay === 'true') {
+                     event.allDay = true;
+                }
+                else {
+                     event.allDay = false;
+                }
+            },
+            /*
+            dayClick: function(date, jsEvent, view) {
+                alert('Clicked on: ' + date.format());
+                $(this).css('background-color', 'red');
+            },
+            */
+            selectable: true,
+            selectHelper: true,
+            select: function(start, end, allDay) {
+                $('#myevent_inp').empty();
+                $('#myevent_inp').append(mydiv_string1);
+                $('#myevent_inp').append(mydiv_string1_1);
+                $('#myevent_inp').append(mydiv_string2);
+                $('#myevent_inp').append(mydiv_string2_2);
+                my_global_start = start;
+                my_global_end = end;
+
+                $.mobile.changePage("#input_my_event", { transition: "slideup", changeHash: false });
+            },
+            editable: true,
+            eventClick: function(event) {
+                if(event.class == 'personal') {
+                    var decision = confirm("삭제 하시겠습니까?");
+                    if (decision) {
+                        $.ajax({
+                           type: "POST",
+                            url:"http://"+ip+"/term/del_my_event.php",
+                            data: "&id="+event.event_id,
+                            crossDomain: true,
+                            cache: false,
+                            success: function(data) {
+                                if(data=="success") {
+                                    $('#my_calendar').fullCalendar('refetchEvents');
+                                    $('#calendar').fullCalendar('refetchEvents');
+                                    alert("Updated Successfully");
+                                }
+                                else
+                                    alert("fail");
+                            }
+                        });
+                    }
+                }
+            }
+
+        });
+    }
+
+
+/* #################### 그룹달력 ######################### */
+    var btn_flag = false;
+    var global_start, global_end;
+    var cal_gid;
+    var event_url;
+    var group_calendar;
+    function call_group_calendar(group_id) {
+        cal_gid = group_id;
+        $('#calendar').fullCalendar('removeEventSource', event_url);
+        event_url = "http://"+ip+"/term/get_group_event.php?gid="+cal_gid;
+        $('#calendar').fullCalendar('addEventSource', event_url);
+        $('#calendar').fullCalendar('refetchEvents');
+
+        $.mobile.changePage("#clnder", { transition: "slideup", changeHash: false });
+        var group_calendar = $('#calendar').fullCalendar({
+            editable: true,
+            header: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'month,agendaWeek,agendaDay'
+            },
+            allDay: false,
+            eventSources: [
+                            event_url
+                          ],
+            eventRender: function(event, element, view) {
+                if (event.allDay === 'true') {
+                     event.allDay = true;
+                }
+                else {
+                     event.allDay = false;
+                }
+            },
+
+            selectable: true,
+            selectHelper: true,
+            select: function(start, end, allDay) {
+                $('#event_inp').empty();
+                $('#event_inp').append(div_string1);
+                $('#event_inp').append(div_string1_1);
+                $('#event_inp').append(div_string2);
+                $('#event_inp').append(div_string2_2);
+                global_start = start;
+                global_end = end;
+
+                $.mobile.changePage("#input_event", { transition: "slideup", changeHash: false });
+
+            },
+            editable: true,
+            eventDrop: function(event, delta) {
+                var start = $.fullCalendar.formatDate(event.start, "yyyy-MM-dd HH:mm:ss");
+                var end = $.fullCalendar.formatDate(event.end, "yyyy-MM-dd HH:mm:ss");
+                $.ajax({
+                    url: 'update_events.php',
+                    data: 'title='+ event.title+'&start='+ start +'&end='+ end +'&id='+ event.event_id ,
+                    type: "POST",
+                    success: function(json) {
+                        alert("Updated Successfully");
+                    }
+                });
+            },
+            eventClick: function(event) {
+
+            /*
+                if(event.class == 'group') {
+                    var decision = confirm("삭제 하시겠습니까?");
+                    if (decision) {
+                        $.ajax({
+                           type: "POST",
+                            url:"http://"+ip+"/term/del_group_event.php",
+                            data: "&id="+event.event_id,
+                            crossDomain: true,
+                            cache: false,
+                            success: function(data) {
+                                if(data=="success") {
+                                    $('#my_calendar').fullCalendar('refetchEvents');
+                                    $('#calendar').fullCalendar('refetchEvents');
+                                    alert("Updated Successfully");
+                                }
+                                else
+                                    alert("fail");
+                            }
+                        });
+                    }
+                }
+            */
+            },
+        });
+
+    }
+    var div_string1='<label for="title">스케줄 이름 : </label><input type="text" name="title" id="title" value="" data-mini="true"/><label for="start_time">시작 시간 : </label>';
+    var div_string1_1='<select name="start_time" id="start_time" data-inline="true">'+
+                '<option value="00">00</option> <option value="01">01</option> <option value="02">02</option> <option value="03">03</option>'+
+                '<option value="04">04</option> <option value="05">05</option> <option value="06">06</option> <option value="07">07</option>'+
+                '<option value="08">08</option> <option value="09">09</option> <option value="10">10</option> <option value="11">11</option>'+
+                '<option value="12">12</option> <option value="13">13</option> <option value="14">14</option> <option value="15">15</option>'+
+                '<option value="16">16</option> <option value="17">17</option> <option value="18">18</option> <option value="19">19</option>'+
+                '<option value="20">20</option> <option value="21">21</option> <option value="22">22</option> <option value="23">23</option>'+
+            '</select><h>시</h>'+
+            '<select name="start_min" id="start_min" data-inline="true">'+
+                '<option value="00">00</option> <option value="05">05</option> <option value="10">10</option> <option value="15">15</option>'+
+                '<option value="20">20</option> <option value="25">25</option> <option value="30">30</option> <option value="35">35</option>'+
+                '<option value="40">40</option> <option value="45">45</option> <option value="50">50</option> <option value="55">55</option>'+
+            '</select><h>분</h>';
+
+    var div_string2='<label for="end_time">종료 시간 : </label>';
+    var div_string2_2='<select name="end_time" id="end_time" data-inline="true">'+
+                '<option value="00">00</option> <option value="01">01</option> <option value="02">02</option> <option value="03">03</option>'+
+                '<option value="04">04</option> <option value="05">05</option> <option value="06">06</option> <option value="07">07</option>'+
+                '<option value="08">08</option> <option value="09">09</option> <option value="10">10</option> <option value="11">11</option>'+
+                '<option value="12">12</option> <option value="13">13</option> <option value="14">14</option> <option value="15">15</option>'+
+                '<option value="16">16</option> <option value="17">17</option> <option value="18">18</option> <option value="19">19</option>'+
+                '<option value="20">20</option> <option value="21">21</option> <option value="22">22</option> <option value="23">23</option>'+
+            '</select><h>시</h>'+
+            '<select name="start_min" id="end_min" data-inline="true">'+
+                '<option value="00">00</option> <option value="05">05</option> <option value="10">10</option> <option value="15">15</option>'+
+                '<option value="20">20</option> <option value="25">25</option> <option value="30">30</option> <option value="35">35</option>'+
+                '<option value="40">40</option> <option value="45">45</option> <option value="50">50</option> <option value="55">55</option>'+
+            '</select><h>분</h>';
+
+
+    var mydiv_string1='<label for="title">스케줄 이름 : </label><input type="text" name="title" id="my_title" value="" data-mini="true"/><label for="start_time">시작 시간 : </label>';
+    var mydiv_string1_1='<select name="start_time" id="my_start_time" data-inline="true">'+
+                '<option value="00">00</option> <option value="01">01</option> <option value="02">02</option> <option value="03">03</option>'+
+                '<option value="04">04</option> <option value="05">05</option> <option value="06">06</option> <option value="07">07</option>'+
+                '<option value="08">08</option> <option value="09">09</option> <option value="10">10</option> <option value="11">11</option>'+
+                '<option value="12">12</option> <option value="13">13</option> <option value="14">14</option> <option value="15">15</option>'+
+                '<option value="16">16</option> <option value="17">17</option> <option value="18">18</option> <option value="19">19</option>'+
+                '<option value="20">20</option> <option value="21">21</option> <option value="22">22</option> <option value="23">23</option>'+
+            '</select><h>시</h>'+
+            '<select name="start_min" id="my_start_min" data-inline="true">'+
+                '<option value="00">00</option> <option value="05">05</option> <option value="10">10</option> <option value="15">15</option>'+
+                '<option value="20">20</option> <option value="25">25</option> <option value="30">30</option> <option value="35">35</option>'+
+                '<option value="40">40</option> <option value="45">45</option> <option value="50">50</option> <option value="55">55</option>'+
+            '</select><h>분</h>';
+
+    var mydiv_string2='<label for="end_time">종료 시간 : </label>';
+    var mydiv_string2_2='<select name="end_time" id="my_end_time" data-inline="true">'+
+                '<option value="00">00</option> <option value="01">01</option> <option value="02">02</option> <option value="03">03</option>'+
+                '<option value="04">04</option> <option value="05">05</option> <option value="06">06</option> <option value="07">07</option>'+
+                '<option value="08">08</option> <option value="09">09</option> <option value="10">10</option> <option value="11">11</option>'+
+                '<option value="12">12</option> <option value="13">13</option> <option value="14">14</option> <option value="15">15</option>'+
+                '<option value="16">16</option> <option value="17">17</option> <option value="18">18</option> <option value="19">19</option>'+
+                '<option value="20">20</option> <option value="21">21</option> <option value="22">22</option> <option value="23">23</option>'+
+            '</select><h>시</h>'+
+            '<select name="start_min" id="my_end_min" data-inline="true">'+
+                '<option value="00">00</option> <option value="05">05</option> <option value="10">10</option> <option value="15">15</option>'+
+                '<option value="20">20</option> <option value="25">25</option> <option value="30">30</option> <option value="35">35</option>'+
+                '<option value="40">40</option> <option value="45">45</option> <option value="50">50</option> <option value="55">55</option>'+
+            '</select><h>분</h>';
+</script>
+    <style>
+        .ui-mobile .ui-page .ui-header .navbar {
+            height: 50px;
+        }
+
+        body {
+            margin: 40px 10px;
+            padding: 0;
+            font-family: "Lucida Grande",Helvetica,Arial,Verdana,sans-serif;
+            font-size: 13px;
+        }
+
+        #calendar {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        a {
+            display: block;
+        }
+        #s_date { font-size: 15px; }
+        #e_date { font-size: 15px; }
+    </style>
+</head>
+
+<body>
+
+<div data-role="page" id="login_page">
+    <center>
+        <br><br>
+
+        <img src="calendar.png" width="300" height="400">
+        <form name=frm1 method=post>
+            <table cellpadding=2>
+                <tr>
+                    <td colspan=2>
+                    </td>
+                </tr>
+                <tr>
+                    <td>ID</td>
+                    <td><input type=text name="id" id="userid" size=10></td>
+                </tr>
+                <tr>
+                    <td>PW</td>
+                    <td><input type=password name="pw" id="userpw" size=10></td>
+                </tr>
+                <tr>
+                    <td colspan=2 align=center><input type=button value="Login" id="Login"> <!--onclick="location.href='#userpage'"-->
+                        &nbsp;&nbsp;<input type=button value="join" onclick="location.href='#sign_in_page'">
+                    </td>
+                </tr>
+            </table>
+        </form>
+        </font>
+    </center>
+</div>
+<div data-role="page" id="sign_in_page">
+    <center>
+        <form action= method=post name=frmjoin>
+            <table cellpadding=2 cellspacing=2>
+                <tr>
+                    <td colspan=2 align=center><b> 회 &nbsp;원&nbsp; 가 &nbsp;입</td></b>
+                </tr>
+                <tr>
+                    <td align=center>ID</td>
+                    <td><input type=text name=joinid maxlength=15 id="sign_in_id">&nbsp;&nbsp;
+                        <input type=button value="중복검사" id="id_check" onclick=chid()></td>
+                    <input type=hidden id="chk_id2" name=chk_id2 value="0">
+                </tr>
+                <tr>
+                    <td align=center>비밀번호</td>
+                    <td><input type=password name="wUserPW" maxlength=20 id="sign_in_pw" onchange="isSame()"/></td>
+                </tr>
+                <tr>
+                    <td align=center>비밀번호 확인</td>
+                    <td><input type=password name="wUserPWConfirm" maxlength=20 id="pwCheck" onchange="isSame()"/>&nbsp;&nbsp;<span id="same"></span></td>
+                </tr>
+                <tr>
+                    <td align=center>이름</td>
+                    <td><input type=text name=name id="sign_in_name" maxlength=20></td>
+                </tr>
+
+                <tr> <td colspan=2 align=center><input type="button" id="submit"  value="가입하기" >&nbsp;&nbsp;
+                    <input type=reset value="다시작성">&nbsp;&nbsp;
+                    <input type=button value="취소" onclick="history.back();">
+                </td>
+                </tr>
+            </table>
+        </form>
+        <iframe src="" id="ifrm1" scrolling=no frameborder=no width=0 height=0 name="ifrm1"></iframe>
+    </center>
+</div>
+
+<div data-role="page" id="userpage">
+    <div data-role="header" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#userpage" class="ui-btn-active, ui-state-persist">마이페이지</a></li>
+                <li><a href="#friendpage">친구 목록</a></li>
+                <li><a href="#grouppage">그룹 목록</a></li>
+            </ul>
+        </div>
+    </div>
+    <div data-role="content">
+        <div id="my_calendar"></div>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#setting" data-icon="plus">사용자 관리</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div data-role="page" id="setting">
+    <div data-role="header" data-position="fixed">
+        <h1>사용자 관리</h1>
+    </div>
+    <div data-role="content">
+        <input type="button" id="logout" value="로그 아웃" data-mini="true"/>
+        <input type="button" id="drop_out" value="회원 탈퇴" data-mini="true"/>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#userpage">뒤로 가기</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<div data-role="page" id="friendpage">
+    <div data-role="header" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#userpage">마이페이지</a></li>
+                <li><a href="#friendpage" class="ui-btn-active, ui-state-persist">친구 목록</a></li>
+                <li><a href="#grouppage">그룹 목록</a></li>
+            </ul>
+        </div>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview" id="friend_list"></ul>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#addfriend" data-icon="plus">친구 추가</a></li>
+                <li><a href="#delfriend" data-icon="minus">친구 삭제</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+<div data-role="page" id="addfriend">
+    <div data-role="header" data-position="fixed">
+        <h1>친구 추가</h1>
+    </div>
+    <div data-role="content">
+        <div data-role="fieldcontain">
+            <label for="friend_id">친구 아이디 : </label>
+            <input type="text" name="friend_id" id="friend_id" value="" data-mini="true"/>
+        </div>
+        <div data-role="fieldcontain">
+            <input type="button" id="search_friend" value="친구 검색" data-mini="true"/>
+        </div>
+        <ul data-role="listview" id="searched_list"></ul>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#friendpage" id="friend_add_confirm" data-icon="check">확인</a></li>
+                <li><a href="#friendpage" data-icon="delete">취소</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div data-role="page" id="delfriend">
+    <div data-role="header" data-position="fixed">
+        <h1>그룹 삭제</h1>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview" id="del_friend_list" data-inset="true"></ul>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#" id="friend_del_confirm" data-icon="check">확인</a></li>
+                <li><a href="#friendpage" data-icon="delete">취소</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+
+
+<div data-role="page" id="grouppage">
+    <div data-role="header" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#userpage">마이페이지</a></li>
+                <li><a href="#friendpage">친구 목록</a></li>
+                <li><a href="#grouppage" class="ui-btn-active, ui-state-persist">그룹 목록</a></li>
+            </ul>
+        </div>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview" id="group_list"></ul>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#addgroup" data-icon="plus">그룹 추가</a></li>
+                <li><a href="#delgroup" data-icon="minus">그룹 삭제</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div data-role="page" id="addgroup">
+    <div data-role="header" data-position="fixed">
+        <h1>그룹 추가</h1>
+    </div>
+    <div data-role="content">
+        <div data-role="fieldcontain">
+            <label for="groupname">그룹이름</label>
+            <input type="text" name="gname" id="groupname" data-role="none">
+        </div>
+        <div data-role="fieldcontain">
+            <label for="friend_select">친구 선택</label>
+            <select name="selected_friend" id="friend_select" multiple="multiple" data-icon="plus">
+            </select>
+        </div>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#grouppage" id="group_add_confirm" data-icon="check">확인</a></li>
+                <li><a href="#grouppage" data-icon="delete">취소</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div data-role="page" id="delgroup">
+    <div data-role="header" data-position="fixed">
+        <h1>그룹 삭제</h1>
+    </div>
+    <div data-role="content">
+        <ul data-role="listview" id="del_group_list" data-inset="true"></ul>
+    </div>
+    <div data-role="footer" data-position="fixed">
+        <div data-role="navbar">
+            <ul>
+                <li><a href="#" id="group_del_confirm" data-icon="check">확인</a></li>
+                <li><a href="#grouppage" data-icon="delete">취소</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div data-role="page" id="clnder">
+    <div data-role="header" data-position="fixed" >
+        <a href="#grouppage" data-icon="back" height="40px">뒤로가기</a>
+        <h1>그룹 일정 관리</h1>
+    </div>
+    <div data-role="content">
+        <div id='calendar'></div>
+        <ul data-role="listview" id="schedule_detail" data-inset="true"></ul>
+    </div>
+    <div data-role="footer" data-position="fixed">
+    </div>
+</div>
+
+<div data-role="page" id="input_event">
+    <div data-role="header" data-position="fixed" >
+        <h2> 스케줄 입력</h2>
+    </div>
+    <div data-role="content">
+        <div data-role="fieldcontain">
+            <div class="ui-body ui-body-a gap" id="event_inp">
+            </div>
+        </div>
+        <div data-role="footer">
+            <div data-role="navbar">
+                <ul>
+                    <li><a href="#" id="event_add_confirm"data-icon="check">확인</a></li>
+                    <li><a href="#clnder" data-icon="delete">취소</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div data-role="page" id="input_my_event">
+    <div data-role="header" data-position="fixed" >
+        <h2> 스케줄 입력</h2>
+    </div>
+    <div data-role="content">
+        <div data-role="fieldcontain">
+            <div class="ui-body ui-body-a gap" id="myevent_inp">
+            </div>
+        </div>
+        <div data-role="footer">
+            <div data-role="navbar">
+                <ul>
+                    <li><a href="#" id="myevent_add_confirm"data-icon="check">확인</a></li>
+                    <li><a href="#userpage" data-icon="delete">취소</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
